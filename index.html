@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF Royal Arena | المنصة الملكية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <nav>
+        <div class="container">
+            <div class="logo">ROYAL ARENA</div>
+            <ul class="nav-links">
+                <li><a id="nav-home" onclick="showPage('home')" class="active">البطولات</a></li>
+                <li><a id="nav-players" onclick="showPage('players')">اللاعبين</a></li>
+                <li><a id="nav-general-stats" onclick="showPage('general-stats')">الإحصائيات العامة</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="home" class="page active">
+        <div class="container">
+            <h2 class="main-title">🏆 نظام البطولات الملكية</h2>
+            <div class="tourney-grid">
+                <div class="tourney-card" onclick="openTournament('دوري النقاط الملكي', 'league')">
+                    <div class="banner-small" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400');"></div>
+                    <div class="card-body">
+                        <h3>دوري النقاط الملكي</h3>
+                        <p>8 فرق بنظام تجميع النقاط</p>
+                    </div>
+                </div>
+                <div class="tourney-card" onclick="openTournament('كأس الإقصاء الكبرى', 'knockout')">
+                    <div class="banner-small" style="background-image: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=400');"></div>
+                    <div class="card-body">
+                        <h3>كأس الإقصاء الكبرى</h3>
+                        <p>نظام خروج المغلوب (رسم شجري)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tourney-details" class="page">
+        <div class="container">
+            <button class="back-btn" onclick="showPage('home')">⬅ عودة للرئيسية</button>
+            <h1 id="det-title">اسم البطولة</h1>
+            
+            <div class="details-grid">
+                <div class="glass-card" id="standing-section">
+                    <h3 class="section-header" id="standing-title">مخطط البطولة</h3>
+                    <div id="standing-content"></div>
+                </div>
+
+                <div class="side-grid">
+                    <div class="glass-card">
+                        <h3 class="section-header">📅 مواعيد المباريات</h3>
+                        <div id="match-list"></div>
+                    </div>
+                    <div class="glass-card">
+                        <h3 class="section-header">🔥 أرقام قياسية</h3>
+                        <div id="stats-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="players" class="page">
+        <div class="container">
+            <h2 class="main-title">🌟 قائمة النخبة (TOP 8)</h2>
+            <div class="glass-card">
+                <table>
+                    <thead>
+                        <tr><th>الاسم</th><th>الآيدي ID</th><th>الكيلات</th><th>الهيدشوت</th></tr>
+                    </thead>
+                    <tbody id="players-list-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="general-stats" class="page">
+        <div class="container">
+            <h2 class="main-title">📊 الإحصائيات الشاملة</h2>
+            <div class="stats-grid" id="main-stats-grid"></div>
+            <div class="mvp-grid" id="general-mvp-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
