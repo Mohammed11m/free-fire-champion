@@ -5,10 +5,10 @@
 // أ- بيانات شجرة خروج المغلوب (Knockout)
 const knockoutData = {
     quarter: [
-        { t1: "يامن", s1: 0, t2: "لؤي", s2: 0, w: 0 }, 
-        { t1: "يحيى", s1: 0, t2: "احمد", s2: 0, w: 0 },
-        { t1: "راشد", s1: 0, t2: "محمد نور", s2: 0, w: 0 },
-        { t1: "فتحي", s1: 0, t2: "محمد لؤي", s2: 0, w: 0 }
+        { t1: "-", s1: 0, t2: "-", s2: 0, w: 0 }, 
+        { t1: "-", s1: 0, t2: "-", s2: 0, w: 0 },
+         { t1: "-", s1: 0, t2: "-", s2: 0, w: 0 },
+        { t1: "-", s1: 0, t2: "-", s2: 0, w: 0 }
     ],
     semi: [
         { t1: "_", s1: 0, t2: "_", s2: 0, w: 0 },
@@ -20,14 +20,14 @@ const knockoutData = {
 
 // ب- بيانات دوري النقاط (League)
 const leagueTeams = [
-    { name: "يامن", booyah: 0, kills: 0, points: 0 },
-    { name: "لؤي", booyah: 0, kills: 0, points: 0 },
-    { name: "يحيى", booyah: 0, kills: 0, points: 0 },
-    { name: "فتحي", booyah: 0, kills: 0, points: 0 },
-    { name: "راشد", booyah: 0, kills: 0, points: 0 },
-    { name: "محمد نور", booyah: 0, kills: 0, points: 0 },
-    { name: "أحمد", booyah: 0, kills: 0, points: 0 },
-    { name: "محمد لؤي", booyah: 0, kills: 0, points: 0 }
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 },
+    { name: "-", booyah: 0, kills: 0, points: 0 }
 ];
 
 // ج- مباريات اليوم
@@ -108,10 +108,10 @@ function openTournament(name, type) {
 
     document.getElementById('stats-content').innerHTML = `
         <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span>أكثر فريق إقصاءً:</span><b style="color: var(--primary-gold);">يامن (52)</b>
+            <span>أكثر فريق إقصاءً:</span><b style="color: var(--primary-gold);">يحيى (0%)</b>
         </div>
         <div style="display: flex; justify-content: space-between;">
-            <span>أعلى نسبة هيدشوت:</span><b style="color: var(--primary-gold);">يحيى (94%)</b>
+            <span>أعلى نسبة هيدشوت:</span><b style="color: var(--primary-gold);">- (0%)</b>
         </div>
     `;
 
@@ -137,10 +137,10 @@ function openTournament(name, type) {
 function initApp() {
     // قائمة اللاعبين
     const players = [
-        {n: "يامن", id: "5122900", k: 145, h: "70%"},
-        {n: "لؤي", id: "6671022", k: 130, h: "55%"},
-        {n: "يحيى", id: "9910023", k: 112, h: "92%"},
-        {n: "فتحي", id: "4421099", k: 98, h: "40%"}
+        {n: "-", id: "5122900", k: 0, h: "70%"},
+        {n: "-", id: "6671022", k: 0, h: "55%"},
+        {n: "-", id: "9910023", k: 0, h: "92%"},
+        {n: "-", id: "4421099", k: 0, h: "40%"}
     ];
     const playersListBody = document.getElementById('players-list-body');
     if(playersListBody) {
