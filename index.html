@@ -9,57 +9,81 @@
 </head>
 <body>
 
+    <div id="admin-modal">
+        <div class="modal-content">
+            <h2 style="color:var(--primary-gold); margin-bottom: 15px;">🔐 الدخول للنظام الملكي</h2>
+            <input type="password" id="admin-password" placeholder="أدخل كلمة السر">
+            <button class="btn-admin" style="width:100%;" onclick="checkPassword()">دخول</button>
+            <button class="btn-admin" style="background:#666; width:100%;" onclick="closeModal('admin-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="tourney-modal">
+        <div class="modal-content">
+            <h2 style="color:var(--primary-gold); margin-bottom: 15px;">🏆 إضافة بطولة جديدة</h2>
+            <input type="text" id="new-t-name" placeholder="اسم البطولة">
+            <input type="text" id="new-t-banner" placeholder="رابط صورة البطولة">
+            <select id="new-t-type">
+                <option value="league">نظام دوري (نقاط)</option>
+                <option value="knockout">نظام إقصاء (شجرة)</option>
+            </select>
+            <button class="btn-admin" style="background:#28a745; width:100%;" onclick="confirmAddTournament()">تأكيد الإضافة</button>
+            <button class="btn-admin" style="background:#666; width:100%;" onclick="closeModal('tourney-modal')">إلغاء</button>
+        </div>
+    </div>
+
     <nav>
         <div class="container">
-            <div class="logo">ROYAL ARENA</div>
+            <div class="logo">ROYAL ARENA <span id="admin-status" class="admin-only" style="color:var(--admin-red); font-size:0.7rem;">[ADMIN]</span></div>
             <ul class="nav-links">
                 <li><a id="nav-home" onclick="showPage('home')" class="active">البطولات</a></li>
                 <li><a id="nav-players" onclick="showPage('players')">اللاعبين</a></li>
-                <li><a id="nav-general-stats" onclick="showPage('general-stats')">الإحصائيات العامة</a></li>
+                <li><a id="nav-general-stats" onclick="showPage('general-stats')">الإحصائيات</a></li>
             </ul>
         </div>
     </nav>
 
     <div id="home" class="page active">
         <div class="container">
-            <h2 class="main-title">🏆 نظام البطولات الملكية</h2>
-            <div class="tourney-grid">
-                <div class="tourney-card" onclick="openTournament('دوري النقاط الملكي', 'league')">
-                    <div class="banner-small" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400');"></div>
-                    <div class="card-body">
-                        <h3>دوري النقاط الملكي</h3>
-                        <p>8 فرق بنظام تجميع النقاط</p>
-                    </div>
-                </div>
-                <div class="tourney-card" onclick="openTournament('كأس الإقصاء الكبرى', 'knockout')">
-                    <div class="banner-small" style="background-image: url('https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=400');"></div>
-                    <div class="card-body">
-                        <h3>كأس الإقصاء الكبرى</h3>
-                        <p>نظام خروج المغلوب (رسم شجري)</p>
-                    </div>
-                </div>
+            <h2 class="main-title">
+                <span class="admin-trigger" onmousedown="startAdminTimer()" onmouseup="clearAdminTimer()" ontouchstart="startAdminTimer()" ontouchend="clearAdminTimer()">🏆</span> 
+                نظام البطولات الملكية
+            </h2>
+            <div class="admin-only" style="text-align:center; margin-bottom: 20px;">
+                <button class="btn-admin" style="background:#28a745" onclick="openAddTourneyModal()">+ إضافة بطولة جديدة</button>
+                <button class="btn-admin" onclick="logoutAdmin()">خروج المسؤول</button>
             </div>
+            <div class="tourney-grid" id="tournaments-list"></div>
         </div>
     </div>
 
     <div id="tourney-details" class="page">
         <div class="container">
-            <button class="back-btn" onclick="showPage('home')">⬅ عودة للرئيسية</button>
-            <h1 id="det-title">اسم البطولة</h1>
-            
+            <button class="back-btn" onclick="showPage('home')">⬅ العودة للقائمة</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap: wrap; gap:10px;">
+                <div style="display:flex; gap:10px; align-items:center;">
+                   <h1 id="det-title" style="color:var(--primary-gold);">اسم البطولة</h1>
+                   <button class="admin-only btn-admin" style="padding:2px 8px; font-size:0.8rem;" onclick="renameTourney()">✏️ الاسم</button>
+                   <button class="admin-only btn-admin" style="padding:2px 8px; font-size:0.8rem; background: #555;" onclick="changeTourneyBanner()">🖼️ الصورة</button>
+                </div>
+                <button class="btn-admin admin-only" onclick="deleteCurrentTournament()">حذف البطولة 🗑️</button>
+            </div>
             <div class="details-grid">
-                <div class="glass-card" id="standing-section">
-                    <h3 class="section-header" id="standing-title">مخطط البطولة</h3>
+                <div class="glass-card">
+                    <span class="admin-badge">تعديل البيانات</span>
+                    <h3 class="section-header" id="standing-title">المخطط</h3>
                     <div id="standing-content"></div>
                 </div>
-
-                <div class="side-grid">
+                <div class="bottom-info-grid">
                     <div class="glass-card">
-                        <h3 class="section-header">📅 مواعيد المباريات</h3>
+                        <span class="admin-badge">إدارة المباريات</span>
+                        <h3 class="section-header">📅 المواعيد</h3>
                         <div id="match-list"></div>
+                        <button class="btn-admin admin-only" style="width:100%; margin-top:10px;" onclick="addMatch()">+ إضافة مباراة</button>
                     </div>
                     <div class="glass-card">
-                        <h3 class="section-header">🔥 أرقام قياسية</h3>
+                        <span class="admin-badge">تعديل الأرقام</span>
+                        <h3 class="section-header">🔥 أرقام البطولة</h3>
                         <div id="stats-content"></div>
                     </div>
                 </div>
@@ -69,14 +93,15 @@
 
     <div id="players" class="page">
         <div class="container">
-            <h2 class="main-title">🌟 قائمة النخبة (TOP 8)</h2>
+            <h2 class="main-title">🌟 قائمة النخبة</h2>
             <div class="glass-card">
-                <table>
-                    <thead>
-                        <tr><th>الاسم</th><th>الآيدي ID</th><th>الكيلات</th><th>الهيدشوت</th></tr>
-                    </thead>
-                    <tbody id="players-list-body"></tbody>
-                </table>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>الاسم</th><th>الآيدي</th><th>الكيلات</th><th>الهيدشوت</th><th class="admin-only">إجراء</th></tr></thead>
+                        <tbody id="players-list-body"></tbody>
+                    </table>
+                </div>
+                <button class="btn-admin admin-only" style="margin-top:15px; width:100%;" onclick="addNewPlayer()">+ إضافة لاعب جديد</button>
             </div>
         </div>
     </div>
@@ -84,8 +109,14 @@
     <div id="general-stats" class="page">
         <div class="container">
             <h2 class="main-title">📊 الإحصائيات الشاملة</h2>
-            <div class="stats-grid" id="main-stats-grid"></div>
-            <div class="mvp-grid" id="general-mvp-list"></div>
+            <div id="main-stats-container" class="stats-main-grid"></div>
+            <div class="admin-only" style="text-align:center; margin-bottom:20px;">
+                <button class="btn-admin" style="background:#28a745" onclick="addGlobalStat()">+ إضافة إحصائية</button>
+            </div>
+            <div id="general-mvp-list" class="mvp-main-grid"></div>
+            <div class="admin-only" style="text-align:center; margin-top:20px;">
+                <button class="btn-admin" style="background:#28a745" onclick="addGlobalMVP()">+ إضافة جائزة MVP</button>
+            </div>
         </div>
     </div>
 
