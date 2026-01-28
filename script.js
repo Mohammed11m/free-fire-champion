@@ -1,35 +1,66 @@
+// --- إعدادات FIREBASE الخاصة بك ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBFAY0L2awgYLZgRlxjCXQDuZ_hTQ0U6Ew",
+    authDomain: "ff-home-4a36a.firebaseapp.com",
+    projectId: "ff-home-4a36a",
+    storageBucket: "ff-home-4a36a.firebasestorage.app",
+    messagingSenderId: "388521388228",
+    appId: "1:388521388228:web:5e2bb5a5928ce8b2c2c191",
+    measurementId: "G-FKR3XK8J2Y"
+};
+
+// تهيئة الاتصال بقاعدة البيانات
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+
 let isAdmin = false;
 let adminTimer;
 let currentTournamentId = null;
 
+// مصفوفة البيانات (سيتم تحميلها من السحاب)
 let appData = {
-    globalStats: [
-        { label: "بطولة مكتملة", value: "24" },
-        { label: "إجمالي القتلى", value: "1,240" }
-    ],
-    mvps: [
-        { icon: "🎯", title: "ملك القتلات", name: "يحيى", stat: "150 KILLS" }
-    ],
-    players: [
-        { name: "يحيى", id: "5122900", kills: 45, hs: "70%" }
-    ],
-    tournaments: [
-        {
-            id: 1, name: "دوري النقاط الملكي", type: "league", 
-            banner: "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=400", 
-            data: [{ name: "فريق النخبة", booyah: 2, kills: 24, points: 50 }], 
-            matches: [], records: { topKills: "-", topHS: "0%" }
-        }
-    ]
+    globalStats: [],
+    mvps: [],
+    players: [],
+    tournaments: []
 };
 
+// --- وظيفة حفظ البيانات للسحاب ---
+function syncToCloud() {
+    if (isAdmin) {
+        db.ref('royalArenaData').set(appData);
+    }
+}
+
+// --- التزامن اللحظي (المستقبل) ---
+// هذه الدالة تجعل الصفحة تتحدث عند الجميع فوراً بدون تحديث المتصفح
+db.ref('royalArenaData').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        appData = data;
+        const activePage = document.querySelector('.page.active').id;
+        if (activePage === 'tourney-details' && currentTournamentId) {
+            openTournament(currentTournamentId);
+        } else {
+            renderPageContent(activePage);
+        }
+    }
+});
+
+// --- وظائف العرض والتنقل ---
 function showPage(pageId) {
     currentTournamentId = null;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
+    
+    const targetPage = document.getElementById(pageId);
+    if(targetPage) targetPage.classList.add('active');
+    
     const navLink = document.getElementById('nav-' + (pageId === 'tourney-details' ? 'home' : pageId));
     if(navLink) navLink.classList.add('active');
+    
     renderPageContent(pageId);
 }
 
@@ -41,7 +72,8 @@ function renderPageContent(pageId) {
 
 function renderHome() {
     const list = document.getElementById('tournaments-list');
-    list.innerHTML = appData.tournaments.map(t => `
+    if(!list) return;
+    list.innerHTML = (appData.tournaments || []).map(t => `
         <div class="tourney-card" onclick="openTournament(${t.id})">
             <div class="banner-small" style="background-image: url('${t.banner || ''}');"></div>
             <div class="card-body">
@@ -66,17 +98,19 @@ function renderTournamentDetails(t) {
     const content = document.getElementById('standing-content');
     const title = document.getElementById('standing-title');
     
-    document.getElementById('match-list').innerHTML = t.matches.map((m, i) => `
+    // المواعيد
+    document.getElementById('match-list').innerHTML = (t.matches || []).map((m, i) => `
         <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.9rem; display:flex; align-items:center; gap:5px;">
             ${isAdmin ? `<input class="edit-input" style="width:70px" value="${m.t1}" onchange="updateMatch(${t.id},${i},'t1',this.value)">` : `<b>${m.t1}</b>`} VS 
             ${isAdmin ? `<input class="edit-input" style="width:70px" value="${m.t2}" onchange="updateMatch(${t.id},${i},'t2',this.value)">` : `<b>${m.t2}</b>`}
             <span style="color:var(--primary-gold); margin-right:auto;">
                 ${isAdmin ? `<input class="edit-input" style="width:70px" value="${m.time}" onchange="updateMatch(${t.id},${i},'time',this.value)">` : m.time}
             </span>
-            ${isAdmin ? `<button onclick="deleteMatch(${t.id},${i})" style="color:red; background:none; border:none;">X</button>` : ''}
+            ${isAdmin ? `<button onclick="deleteMatch(${t.id},${i})" style="color:red; background:none; border:none; cursor:pointer;">X</button>` : ''}
         </div>
     `).join('') || '<p style="opacity:0.5; text-align:center;">لا توجد مباريات</p>';
 
+    // الأرقام القياسية
     document.getElementById('stats-content').innerHTML = `
         <p>أكثر قتلات: ${isAdmin ? `<input class="edit-input" value="${t.records.topKills}" onchange="updateTourneyRecord(${t.id},'topKills',this.value)">` : t.records.topKills}</p>
         <p>أعلى هيدشوت: ${isAdmin ? `<input class="edit-input" value="${t.records.topHS}" onchange="updateTourneyRecord(${t.id},'topHS',this.value)">` : t.records.topHS}</p>
@@ -85,17 +119,17 @@ function renderTournamentDetails(t) {
     if(t.type === 'league') {
         title.innerText = "📊 جدول الترتيب";
         content.innerHTML = `
-            <div class="admin-only" style="margin-bottom:10px;"><button onclick="addLeagueTeam(${t.id})" class="btn-admin" style="background:#28a745; width:100%;">+ إضافة فريق</button></div>
+            ${isAdmin ? `<div class="admin-only" style="margin-bottom:10px;"><button onclick="addLeagueTeam(${t.id})" class="btn-admin" style="background:#28a745; width:100%;">+ إضافة فريق</button></div>` : ''}
             <div class="table-responsive">
                 <table>
                     <thead><tr><th>الفريق</th><th>بوياه</th><th>كيلات</th><th>نقاط</th><th class="admin-only">X</th></tr></thead>
-                    <tbody>${t.data.map((team, idx) => `
+                    <tbody>${(t.data || []).map((team, idx) => `
                         <tr>
                             <td>${isAdmin ? `<input class="edit-input" value="${team.name}" onchange="updateLeague(${t.id},${idx},'name',this.value)">` : team.name}</td>
                             <td>${isAdmin ? `<input type="number" class="edit-input" value="${team.booyah}" onchange="updateLeague(${t.id},${idx},'booyah',this.value)">` : team.booyah}</td>
                             <td>${isAdmin ? `<input type="number" class="edit-input" value="${team.kills}" onchange="updateLeague(${t.id},${idx},'kills',this.value)">` : team.kills}</td>
                             <td>${isAdmin ? `<input type="number" class="edit-input" value="${team.points}" onchange="updateLeague(${t.id},${idx},'points',this.value)">` : team.points}</td>
-                            <td class="admin-only"><button onclick="deleteLeagueTeam(${t.id},${idx})" style="color:red; background:none; border:none;">🗑️</button></td>
+                            ${isAdmin ? `<td class="admin-only"><button onclick="deleteLeagueTeam(${t.id},${idx})" style="color:red; background:none; border:none; cursor:pointer;">🗑️</button></td>` : ''}
                         </tr>`).join('')}</tbody>
                 </table>
             </div>
@@ -123,24 +157,31 @@ function renderBracketHTML(t) {
         </div>
     `;
     return `<div class="bracket-container">
-        <div class="bracket-round"><div class="bracket-round-title">ربع النهائي</div>${d.quarter.map((m,i)=>matchUI(m,'quarter',i)).join('')}</div>
-        <div class="bracket-round"><div class="bracket-round-title">نصف النهائي</div>${d.semi.map((m,i)=>matchUI(m,'semi',i)).join('')}</div>
+        <div class="bracket-round"><div class="bracket-round-title">ربع النهائي</div>${(d.quarter || []).map((m,i)=>matchUI(m,'quarter',i)).join('')}</div>
+        <div class="bracket-round"><div class="bracket-round-title">نصف النهائي</div>${(d.semi || []).map((m,i)=>matchUI(m,'semi',i)).join('')}</div>
         <div class="bracket-round"><div class="bracket-round-title">النهائي</div>${matchUI(d.final,'final',0)}</div>
     </div>`;
 }
 
-// مؤقت المسؤول 7 ثواني
+// --- نظام الإدارة ---
 function startAdminTimer() { adminTimer = setTimeout(() => { document.getElementById('admin-modal').style.display='flex'; }, 7000); }
 function clearAdminTimer() { clearTimeout(adminTimer); }
 
 function checkPassword() {
     if(document.getElementById('admin-password').value === '02580258') {
-        isAdmin = true; document.body.classList.add('admin-mode'); closeModal('admin-modal');
+        isAdmin = true; 
+        document.body.classList.add('admin-mode'); 
+        closeModal('admin-modal');
         currentTournamentId ? openTournament(currentTournamentId) : renderPageContent('home');
-    } else alert('خطأ!');
+    } else alert('كلمة السر خاطئة!');
 }
 
-function logoutAdmin() { isAdmin = false; document.body.classList.remove('admin-mode'); showPage('home'); }
+function logoutAdmin() { 
+    isAdmin = false; 
+    document.body.classList.remove('admin-mode'); 
+    showPage('home'); 
+}
+
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function openAddTourneyModal() { document.getElementById('tourney-modal').style.display = 'flex'; }
 
@@ -155,62 +196,118 @@ function confirmAddTournament() {
         final: { t1: "-", s1: 0, t2: "-", s2: 0, w: 0 }
     };
     appData.tournaments.push({ id: Date.now(), name, type, banner, data, matches: [], records: { topKills: "-", topHS: "0%" } });
-    closeModal('tourney-modal'); renderHome();
+    syncToCloud(); 
+    closeModal('tourney-modal');
 }
 
-// بقية وظائف التحديث (اختصاراً)
-function updateLeague(id, idx, f, v) { appData.tournaments.find(x=>x.id==id).data[idx][f] = (f=='name'?v:parseInt(v)); }
-function addLeagueTeam(id) { appData.tournaments.find(x=>x.id==id).data.push({name:"جديد",booyah:0,kills:0,points:0}); openTournament(id); }
-function deleteLeagueTeam(id, idx) { appData.tournaments.find(x=>x.id==id).data.splice(idx,1); openTournament(id); }
+// --- دوال التحديث (كلها تدعم المزامنة الآن) ---
+function updateLeague(id, idx, f, v) { 
+    appData.tournaments.find(x=>x.id==id).data[idx][f] = (f=='name'?v:parseInt(v)); 
+    syncToCloud(); 
+}
+function addLeagueTeam(id) { 
+    appData.tournaments.find(x=>x.id==id).data.push({name:"فريق جديد",booyah:0,kills:0,points:0}); 
+    syncToCloud(); 
+}
+function deleteLeagueTeam(id, idx) { 
+    appData.tournaments.find(x=>x.id==id).data.splice(idx,1); 
+    syncToCloud(); 
+}
 function updateKnockout(id, r, idx, f, v) {
     const t = appData.tournaments.find(x=>x.id==id);
     const target = (r=='final') ? t.data[r] : t.data[r][idx];
     target[f] = (f=='t1'||f=='t2'?v:parseInt(v));
-    openTournament(id);
+    syncToCloud();
 }
-function updateMatch(id, idx, f, v) { appData.tournaments.find(x=>x.id==id).matches[idx][f]=v; }
-function addMatch() { appData.tournaments.find(x=>x.id==currentTournamentId).matches.push({t1:"-",t2:"-",time:"00:00"}); openTournament(currentTournamentId); }
-function deleteMatch(id, idx) { appData.tournaments.find(x=>x.id==id).matches.splice(idx,1); openTournament(id); }
-function updateTourneyRecord(id, f, v) { appData.tournaments.find(x=>x.id==id).records[f]=v; }
+function updateMatch(id, idx, f, v) { 
+    appData.tournaments.find(x=>x.id==id).matches[idx][f]=v; 
+    syncToCloud(); 
+}
+function addMatch() { 
+    const t = appData.tournaments.find(x=>x.id==currentTournamentId);
+    if(!t.matches) t.matches = [];
+    t.matches.push({t1:"-",t2:"-",time:"00:00"}); 
+    syncToCloud(); 
+}
+function deleteMatch(id, idx) { 
+    appData.tournaments.find(x=>x.id==id).matches.splice(idx,1); 
+    syncToCloud(); 
+}
+function updateTourneyRecord(id, f, v) { 
+    appData.tournaments.find(x=>x.id==id).records[f]=v; 
+    syncToCloud(); 
+}
 function renameTourney() {
-    const n = prompt("الاسم:", appData.tournaments.find(x=>x.id==currentTournamentId).name);
-    if(n) { appData.tournaments.find(x=>x.id==currentTournamentId).name = n; openTournament(currentTournamentId); }
+    const t = appData.tournaments.find(x=>x.id==currentTournamentId);
+    const n = prompt("الاسم الجديد للبطولة:", t.name);
+    if(n) { t.name = n; syncToCloud(); }
 }
 function changeTourneyBanner() {
-    const b = prompt("الرابط:", appData.tournaments.find(x=>x.id==currentTournamentId).banner);
-    if(b!==null) { appData.tournaments.find(x=>x.id==currentTournamentId).banner = b; openTournament(currentTournamentId); }
+    const t = appData.tournaments.find(x=>x.id==currentTournamentId);
+    const b = prompt("رابط صورة الخلفية الجديد:", t.banner);
+    if(b !== null) { t.banner = b; syncToCloud(); }
 }
-function deleteCurrentTournament() { if(confirm('حذف؟')){ appData.tournaments=appData.tournaments.filter(x=>x.id!=currentTournamentId); showPage('home'); }}
+function deleteCurrentTournament() { 
+    if(confirm('هل أنت متأكد من حذف هذه البطولة نهائياً؟')){ 
+        appData.tournaments = appData.tournaments.filter(x=>x.id!=currentTournamentId); 
+        syncToCloud(); 
+        showPage('home'); 
+    }
+}
 
 function renderPlayers() {
-    document.getElementById('players-list-body').innerHTML = appData.players.map((p, i) => `
+    const body = document.getElementById('players-list-body');
+    if(!body) return;
+    body.innerHTML = (appData.players || []).map((p, i) => `
         <tr>
-            <td>${isAdmin ? `<input class="edit-input" value="${p.name}" onchange="appData.players[${i}].name=this.value">` : p.name}</td>
-            <td>${isAdmin ? `<input class="edit-input" value="${p.id}" onchange="appData.players[${i}].id=this.value">` : p.id}</td>
-            <td>${isAdmin ? `<input type="number" class="edit-input" value="${p.kills}" onchange="appData.players[${i}].kills=this.value">` : p.kills}</td>
-            <td>${isAdmin ? `<input class="edit-input" value="${p.hs}" onchange="appData.players[${i}].hs=this.value">` : p.hs}</td>
-            <td class="admin-only"><button onclick="appData.players.splice(${i},1); renderPlayers();">X</button></td>
+            <td>${isAdmin ? `<input class="edit-input" value="${p.name}" onchange="appData.players[${i}].name=this.value; syncToCloud();">` : p.name}</td>
+            <td>${isAdmin ? `<input class="edit-input" value="${p.id}" onchange="appData.players[${i}].id=this.value; syncToCloud();">` : p.id}</td>
+            <td>${isAdmin ? `<input type="number" class="edit-input" value="${p.kills}" onchange="appData.players[${i}].kills=this.value; syncToCloud();">` : p.kills}</td>
+            <td>${isAdmin ? `<input class="edit-input" value="${p.hs}" onchange="appData.players[${i}].hs=this.value; syncToCloud();">` : p.hs}</td>
+            ${isAdmin ? `<td class="admin-only"><button onclick="appData.players.splice(${i},1); syncToCloud();" style="color:red; background:none; border:none; cursor:pointer;">X</button></td>` : ''}
         </tr>`).join('');
 }
 
 function renderStats() {
-    document.getElementById('main-stats-container').innerHTML = appData.globalStats.map((s, i) => `
-        <div class="glass-card" style="text-align:center;">
-            ${isAdmin ? `<input class="edit-input" value="${s.value}" onchange="appData.globalStats[${i}].value=this.value">` : `<h3>${s.value}</h3>`}
-            ${isAdmin ? `<input class="edit-input" value="${s.label}" onchange="appData.globalStats[${i}].label=this.value">` : `<p>${s.label}</p>`}
-        </div>`).join('');
+    const mainContainer = document.getElementById('main-stats-container');
+    const mvpContainer = document.getElementById('general-mvp-list');
     
-    document.getElementById('general-mvp-list').innerHTML = appData.mvps.map((m, i) => `
-        <div class="glass-card" style="text-align:center;">
-            <span>${m.icon}</span>
-            <p>${m.title}</p>
-            <h3>${m.name}</h3>
-            <b>${m.stat}</b>
-        </div>`).join('');
+    if(mainContainer) {
+        mainContainer.innerHTML = (appData.globalStats || []).map((s, i) => `
+            <div class="glass-card" style="text-align:center;">
+                ${isAdmin ? `<input class="edit-input" style="font-size:1.5rem; text-align:center; font-weight:bold;" value="${s.value}" onchange="appData.globalStats[${i}].value=this.value; syncToCloud();">` : `<h3>${s.value}</h3>`}
+                ${isAdmin ? `<input class="edit-input" style="text-align:center;" value="${s.label}" onchange="appData.globalStats[${i}].label=this.value; syncToCloud();">` : `<p>${s.label}</p>`}
+            </div>`).join('');
+    }
+    
+    if(mvpContainer) {
+        mvpContainer.innerHTML = (appData.mvps || []).map((m, i) => `
+            <div class="glass-card" style="text-align:center; position:relative;">
+                ${isAdmin ? `<button onclick="appData.mvps.splice(${i},1); syncToCloud();" style="position:absolute; top:5px; left:5px; color:red; background:none; border:none; cursor:pointer;">X</button>` : ''}
+                <span>${m.icon}</span>
+                <p>${isAdmin ? `<input class="edit-input" style="text-align:center;" value="${m.title}" onchange="appData.mvps[${i}].title=this.value; syncToCloud();">` : m.title}</p>
+                <h3>${isAdmin ? `<input class="edit-input" style="text-align:center; font-weight:bold;" value="${m.name}" onchange="appData.mvps[${i}].name=this.value; syncToCloud();">` : m.name}</h3>
+                <b>${isAdmin ? `<input class="edit-input" style="text-align:center;" value="${m.stat}" onchange="appData.mvps[${i}].stat=this.value; syncToCloud();">` : m.stat}</b>
+            </div>`).join('');
+    }
 }
 
-function addNewPlayer() { appData.players.push({name:"لاعب", id:"000", kills:0, hs:"0%"}); renderPlayers(); }
-function addGlobalStat() { appData.globalStats.push({ label: "إحصائية", value: "0" }); renderStats(); }
-function addGlobalMVP() { appData.mvps.push({ icon: "🏆", title: "لقب", name: "الاسم", stat: "0" }); renderStats(); }
+function addNewPlayer() { 
+    if(!appData.players) appData.players = [];
+    appData.players.push({name:"لاعب جديد", id:"000000", kills:0, hs:"0%"}); 
+    syncToCloud(); 
+}
+function addGlobalStat() { 
+    if(!appData.globalStats) appData.globalStats = [];
+    appData.globalStats.push({ label: "إحصائية جديدة", value: "0" }); 
+    syncToCloud(); 
+}
+function addGlobalMVP() { 
+    if(!appData.mvps) appData.mvps = [];
+    appData.mvps.push({ icon: "🏆", title: "ملك السيرفر", name: "الاسم", stat: "0 Kills" }); 
+    syncToCloud(); 
+}
 
-window.onload = () => renderHome();
+window.onload = () => {
+    // سيتم جلب البيانات وبناء الصفحة تلقائياً من خلال مستمع Firebase (on value)
+};
